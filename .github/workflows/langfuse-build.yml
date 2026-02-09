@@ -7,14 +7,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - run: docker version
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::162343471462:role/GitHubActionsECRPushRole
+          aws-region: ap-northeast-1
 
       - run: |
-          docker build \
-            --build-arg NEXT_PUBLIC_BASE_PATH=/langfuse \
-            -t langfuse-test \
-            -f web/Dockerfile .
+          aws ecr get-login-password \
+            | docker login \
+              --username AWS \
+              --password-stdin 123456789012.dkr.ecr.ap-northeast-1.amazonaws.com
+
+      - run: |
+          docker build -t langfuse .
+          docker tag langfuse:latest 123456789012.dkr.ecr.ap-northeast-1.amazonaws.com/langfuse:latest
+          docker push 123456789012.dkr.ecr.ap-northeast-1.amazonaws.com/langfuse:latest
