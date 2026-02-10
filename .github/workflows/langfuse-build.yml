@@ -1,27 +1,49 @@
-name: Build and Push Langfuse
+name: Build and Push Langfuse to ECR
 
 on:
   push:
     branches: [ "v2" ]
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: aws-actions/configure-aws-credentials@v4
+    steps:
+      # ① リポジトリを Actions VM に持ってくる
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ② IAM Role を使って AWS にログイン（ここが IAM）
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::162343471462:role/GitHubActionsECRPushRole
           aws-region: ap-northeast-1
 
-      - run: |
+      # ③ ECR に docker login
+      - name: Login to Amazon ECR
+        run: |
           aws ecr get-login-password \
             | docker login \
               --username AWS \
-              --password-stdin 123456789012.dkr.ecr.ap-northeast-1.amazonaws.com
+              --password-stdin 162343471462.dkr.ecr.ap-northeast-1.amazonaws.com
 
-      - run: |
-          docker build -t langfuse .
-          docker tag langfuse:latest 123456789012.dkr.ecr.ap-northeast-1.amazonaws.com/langfuse:latest
-          docker push 123456789012.dkr.ecr.ap-northeast-1.amazonaws.com/langfuse:latest
+      # ④ Docker build
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_BASE_PATH=/langfuse \
+            -t langfuse:latest \
+            -f ./web/Dockerfile .
+
+      # ⑤ Tag & Push（ここで「実体」が残る）
+      - name: Push to ECR
+        run: |
+          docker tag langfuse:latest \
+            162343471462.dkr.ecr.ap-northeast-1.amazonaws.com/langfuse:latest
+          docker push \
+            162343471462.dkr.ecr.ap-northeast-1.amazonaws.com/langfuse:latest
