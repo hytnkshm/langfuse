@@ -954,6 +954,34 @@ export class IngestionService {
         if (outputCost != null) provided_cost_details.output = outputCost;
         if (totalCost != null) provided_cost_details.total = totalCost;
       }
+      // Extract cost details from metadata (e.g., from Dify integration)
+      if (obs.body.metadata && typeof obs.body.metadata === "object") {
+        const metadata = obs.body.metadata as Record<string, unknown>;
+
+        // Handle total_price from metadata
+        if (
+          metadata.total_price != null &&
+          typeof metadata.total_price === "number"
+        ) {
+          provided_cost_details.total = metadata.total_price;
+        }
+
+        // Handle input_cost from metadata
+        if (
+          metadata.input_cost != null &&
+          typeof metadata.input_cost === "number"
+        ) {
+          provided_cost_details.input = metadata.input_cost;
+        }
+
+        // Handle output_cost from metadata
+        if (
+          metadata.output_cost != null &&
+          typeof metadata.output_cost === "number"
+        ) {
+          provided_cost_details.output = metadata.output_cost;
+        }
+      }
 
       if (obs.type?.endsWith("-create") && !obs.body?.startTime) {
         logger.warn(
