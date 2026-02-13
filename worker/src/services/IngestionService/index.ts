@@ -954,32 +954,57 @@ export class IngestionService {
         if (outputCost != null) provided_cost_details.output = outputCost;
         if (totalCost != null) provided_cost_details.total = totalCost;
       }
+
       // Extract cost details from metadata (e.g., from Dify integration)
       if (obs.body.metadata && typeof obs.body.metadata === "object") {
         const metadata = obs.body.metadata as Record<string, unknown>;
 
-        // Handle total_price from metadata
-        if (
-          metadata.total_price != null &&
-          typeof metadata.total_price === "number"
-        ) {
-          provided_cost_details.total = metadata.total_price;
+        // Handle total_price from metadata (can be number or string)
+        if (metadata.total_price != null) {
+          let totalPrice: number | null = null;
+          if (typeof metadata.total_price === "number") {
+            totalPrice = metadata.total_price;
+          } else if (typeof metadata.total_price === "string") {
+            const parsed = parseFloat(metadata.total_price);
+            if (!isNaN(parsed)) {
+              totalPrice = parsed;
+            }
+          }
+          if (totalPrice != null && totalPrice >= 0) {
+            provided_cost_details.total = totalPrice;
+          }
         }
 
-        // Handle input_cost from metadata
-        if (
-          metadata.input_cost != null &&
-          typeof metadata.input_cost === "number"
-        ) {
-          provided_cost_details.input = metadata.input_cost;
+        // Handle input_cost from metadata (can be number or string)
+        if (metadata.input_cost != null) {
+          let inputCost: number | null = null;
+          if (typeof metadata.input_cost === "number") {
+            inputCost = metadata.input_cost;
+          } else if (typeof metadata.input_cost === "string") {
+            const parsed = parseFloat(metadata.input_cost);
+            if (!isNaN(parsed)) {
+              inputCost = parsed;
+            }
+          }
+          if (inputCost != null && inputCost >= 0) {
+            provided_cost_details.input = inputCost;
+          }
         }
 
-        // Handle output_cost from metadata
-        if (
-          metadata.output_cost != null &&
-          typeof metadata.output_cost === "number"
-        ) {
-          provided_cost_details.output = metadata.output_cost;
+        // Handle output_cost from metadata (can be number or string)
+        if (metadata.output_cost != null) {
+          let outputCost: number | null = null;
+          if (typeof metadata.output_cost === "number") {
+            outputCost = metadata.output_cost;
+          } else if (typeof metadata.output_cost === "string") {
+            const parsed = parseFloat(metadata.output_cost);
+            if (!isNaN(parsed)) {
+              outputCost = parsed;
+            }
+          }
+          if (outputCost != null && outputCost >= 0) {
+            provided_cost_details.output = outputCost;
+          }
         }
       }
 
