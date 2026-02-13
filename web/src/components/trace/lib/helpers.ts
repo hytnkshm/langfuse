@@ -3,6 +3,10 @@ import { type NestedObservation } from "@/src/utils/types";
 import { type ObservationReturnType } from "@/src/server/api/routers/traces";
 import Decimal from "decimal.js";
 
+export type ObservationWithMetadata = ObservationReturnType & {
+  metadata?: string | null;
+};
+
 export type TreeItemType = ObservationType | "TRACE";
 
 export const treeItemColors: Map<TreeItemType, string> = new Map([
@@ -64,8 +68,28 @@ export function nestObservations(
   return Array.from(roots.values());
 }
 
+function extractTotalPriceFromMetadata(
+  metadataString: string | null | undefined,
+): Decimal | null {
+  if (!metadataString) return null;
+
+  try {
+    const metadata = JSON.parse(metadataString);
+    if (metadata && typeof metadata === "object" && "total_price" in metadata) {
+      const totalPrice = metadata.total_price;
+      if (totalPrice !== null && totalPrice !== undefined) {
+        return new Decimal(totalPrice);
+      }
+    }
+  } catch {
+    // Failed to parse metadata, continue without metadata price
+  }
+
+  return null;
+}
+
 export function calculateDisplayTotalCost(p: {
-  allObservations: ObservationReturnType[];
+  allObservations: ObservationWithMetadata[];
   rootObservationId?: string;
 }): Decimal | undefined {
   // if parentObservationId is provided, only calculate cost for children of that observation
@@ -93,7 +117,14 @@ export function calculateDisplayTotalCost(p: {
   }
 
   const totalCost = observations.reduce(
-    (prev: Decimal | undefined, curr: ObservationReturnType) => {
+    (prev: Decimal | undefined, curr: ObservationWithMetadata) => {
+      // Try to get total_price from metadata first
+      const metadataPrice = extractTotalPriceFromMetadata(curr.metadata);
+      if (metadataPrice) {
+        return prev ? prev.plus(metadataPrice) : metadataPrice;
+      }
+
+      // Fall back to calculated costs
       // if we don't have any calculated costs, we can't do anything
       if (
         !curr.calculatedTotalCost &&
