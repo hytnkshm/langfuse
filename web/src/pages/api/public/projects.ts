@@ -30,6 +30,16 @@ export default async function handler(
         where: {
           id: authCheck.scope.projectId,
         },
+        select: {
+          id: true,
+          name: true,
+          organization: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
       });
 
       const rateLimitCheck = await new RateLimitService(redis).rateLimitRequest(
@@ -45,6 +55,11 @@ export default async function handler(
         data: projects.map((project) => ({
           id: project.id,
           name: project.name,
+          organization: {
+            id: project.organization.id,
+            name: project.organization.name,
+          },
+          metadata: {},
         })),
       });
     } catch (error) {

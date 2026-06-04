@@ -4248,6 +4248,22 @@ components:
           type: string
         name:
           type: string
+        organization:
+          $ref: '#/components/schemas/Organization'
+        metadata: {}
+      required:
+        - id
+        - name
+        - organization
+        - metadata
+    Organization:
+      title: Organization
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
       required:
         - id
         - name

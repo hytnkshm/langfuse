@@ -21,3 +21,10 @@ types:
     properties:
       id: string
       name: string
+      organization: Organization
+      metadata: unknown
+
+  Organization:
+    properties:
+      id: string
+      name: string
